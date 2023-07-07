@@ -13,10 +13,14 @@ open Socket
 
 structure Handler (α : Type) where
   uri : String
-  handler : HttpRequest → α
+  handler [Lean.ToJson α] : HttpRequest → α
 
 structure Config where
-  handlers : ∀ α, List (Handler α)
+  handlers : {α : Type} → String → Handler α
+
+def testHandler : HttpRequest → String := fun _ => "test"
+
+-- #check (⟨ [⟨ "blah", testHandler ⟩]⟩ : Config)
 
 def run : IO Unit := do
   -- configure local SockAddr
