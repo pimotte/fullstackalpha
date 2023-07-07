@@ -9,6 +9,7 @@ package «fullstackalpha» {
 
 lean_lib «Fullstackalpha» {
   -- add library configuration options here
+  roots := #[`Fullstackalpha]
 }
 
 @[default_target]

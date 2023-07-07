@@ -6,7 +6,7 @@ Goals for Alpha:
 
 - Serving GET HTTP requests
 - Making GET HTTP requests
-- Mapping to and from JSON
+- Mapping from to JSON
 
 Non-goals
 
