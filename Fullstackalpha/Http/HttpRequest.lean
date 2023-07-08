@@ -37,3 +37,7 @@ def receiveRequest (socket : Socket.Socket) : ExceptT ParseError IO HttpRequest 
   let request ← socket.recv 8192
   let decoded := String.fromUTF8Unchecked request
   parse decoded
+
+def HttpRequest.render (req : HttpRequest) : String := 
+  let requestLine := s!"{req.method.asString} {req.uri} HTTP/1.1"
+  requestLine

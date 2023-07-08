@@ -15,16 +15,11 @@ open Socket
 
 structure Config where
   handler : HttpRequest → HttpResponse
-  port : Nat
-
-def testHandler : HttpRequest → String := fun _ => "test"
-
--- #check (⟨ [⟨ "blah", testHandler ⟩]⟩ : Config)
+  port : Port
 
 def run (conf : Config) : IO Unit := do
-  let port := String.mk (Nat.toDigits 10 conf.port)
   -- configure local SockAddr
-  let localAddr ← SockAddr.mk "localhost" port AddressFamily.inet SockType.stream
+  let localAddr ← SockAddr.mk "localhost" conf.port.asString AddressFamily.inet SockType.stream
   IO.println s!"Local Addr: {localAddr}"
 
   -- bind a socket to local address
@@ -34,7 +29,7 @@ def run (conf : Config) : IO Unit := do
 
   -- listen to HTTP requests
   socket.listen 5
-  IO.println s!"Listening at http://localhost:{port}."
+  IO.println s!"Listening at http://localhost:{conf.port}."
 
   -- serving
   repeat do
