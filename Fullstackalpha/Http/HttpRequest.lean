@@ -1,11 +1,9 @@
 import Socket
 
 import Lean.Data.Parsec
+import Fullstackalpha.Http.Basic
 
-namespace Fullstackalpha.Http.HttpRequest
-
-inductive Method 
- | GET 
+namespace Fullstackalpha.Http
 
 structure HttpRequest where
   method : Method

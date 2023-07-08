@@ -1,30 +1,30 @@
 import Socket
 
 import Fullstackalpha.Http.HttpRequest
+import Fullstackalpha.Http.HttpResponse
 
 import Lean.Data.Json.FromToJson
 
 
-namespace Fullstackalpha.Http.Server
+namespace Fullstackalpha.Http
 
-open Fullstackalpha.Http.HttpRequest
+
 
 open Socket
 
-structure Handler (α : Type) where
-  uri : String
-  handler [Lean.ToJson α] : HttpRequest → α
 
 structure Config where
-  handlers : {α : Type} → String → Handler α
+  handler : HttpRequest → HttpResponse
+  port : Nat
 
 def testHandler : HttpRequest → String := fun _ => "test"
 
 -- #check (⟨ [⟨ "blah", testHandler ⟩]⟩ : Config)
 
-def run : IO Unit := do
+def run (conf : Config) : IO Unit := do
+  let port := String.mk (Nat.toDigits 10 conf.port)
   -- configure local SockAddr
-  let localAddr ← SockAddr.mk "localhost" "8080" AddressFamily.inet SockType.stream
+  let localAddr ← SockAddr.mk "localhost" port AddressFamily.inet SockType.stream
   IO.println s!"Local Addr: {localAddr}"
 
   -- bind a socket to local address
@@ -34,7 +34,7 @@ def run : IO Unit := do
 
   -- listen to HTTP requests
   socket.listen 5
-  IO.println s!"Listening at http://localhost:8080."
+  IO.println s!"Listening at http://localhost:{port}."
 
   -- serving
   repeat do
@@ -45,12 +45,9 @@ def run : IO Unit := do
       | .error e => IO.println s!"Error: {e}"
       | .ok request =>
         IO.println s!"URI: {request.uri}"
-        let strSend := 
-          "HTTP/1.1 200 OK" ++
-          "Content-Length:5" ++
-          "\r\n\r\n" ++
-          "Hello" ++
-          "\r\n\r\n"
+        let result := conf.handler request
+  
+        let strSend := result.render
         let bytesSend ← socket'.send strSend.toUTF8
         socket'.close
 
