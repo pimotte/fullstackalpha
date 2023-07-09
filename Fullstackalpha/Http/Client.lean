@@ -1,4 +1,3 @@
-
 import Socket
 
 import Fullstackalpha.Http.HttpRequest
@@ -12,8 +11,9 @@ structure ClientConfig where
   host : String
   port : Port
 
-def perform (conf : ClientConfig) (req : HttpRequest) : IO String := do
+def perform (conf : ClientConfig) (req : HttpRequest) : IO HttpResponse := do
   -- configure remote SockAddr
+  IO.println s!"Before new sock"
   let remoteAddr ← SockAddr.mk conf.host conf.port.asString AddressFamily.inet SockType.stream
   IO.println s!"Remote Addr: {remoteAddr}"
 
@@ -24,9 +24,18 @@ def perform (conf : ClientConfig) (req : HttpRequest) : IO String := do
 
   -- send HTTP request
   let strSend := req.render
+  IO.println s!"Raw request: {strSend}"
   let bytesSend ← socket.send strSend.toUTF8
-  IO.println s!"Send {bytesSend} bytes!\n"
+  IO.println s!"Sent {bytesSend} bytes!\n"
 
   -- get HTTP response and return it
   let bytesRecv ← socket.recv 8192
-  return String.fromUTF8Unchecked bytesRecv
+  IO.println s!"Post Recv!\n"
+  let rawResponse := String.fromUTF8Unchecked bytesRecv
+  IO.println s!"Parsed response, raw: {rawResponse}"
+  match Fullstackalpha.Http.HttpResponse.parse rawResponse with
+  | .ok resp => pure resp
+  | .error e => pure {
+    statusCode := .fromNat 500,
+    body := some e
+  }

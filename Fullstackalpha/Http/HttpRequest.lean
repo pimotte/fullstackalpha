@@ -8,12 +8,11 @@ namespace Fullstackalpha.Http
 structure HttpRequest where
   method : Method
   uri : String
-
-abbrev ParseError := String
+  headers : List Header
 
 open Lean.Parsec
 
-def isNotWhitespace : Char → Bool := fun c => ¬ (c = '\u0009' ∨ c = '\u000a' ∨ c = '\u000d' ∨ c = '\u0020')
+
 
 def method : Lean.Parsec Method := do
   let res ← pstring "GET"
@@ -26,6 +25,7 @@ def httpRequest : Lean.Parsec HttpRequest := do
   pure {
     method := meth
     uri := String.mk (uri.toList)
+    headers := []
   }
 
 def parse (s : String) : Except ParseError HttpRequest :=
@@ -39,5 +39,6 @@ def receiveRequest (socket : Socket.Socket) : ExceptT ParseError IO HttpRequest 
   parse decoded
 
 def HttpRequest.render (req : HttpRequest) : String := 
-  let requestLine := s!"{req.method.asString} {req.uri} HTTP/1.1"
-  requestLine
+  let requestLine := s!"{req.method.asString} {req.uri} HTTP/1.1\r\n"
+  let headers := req.headers.map (fun h => s!"{h.name}: {h.value}\r\n")
+  requestLine ++ headers.foldr (. ++ .) "" ++ "\r\n"

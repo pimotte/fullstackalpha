@@ -14,7 +14,7 @@ open Socket
 
 
 structure Config where
-  handler : HttpRequest → HttpResponse
+  handler : HttpRequest → IO HttpResponse
   port : Port
 
 def run (conf : Config) : IO Unit := do
@@ -40,8 +40,8 @@ def run (conf : Config) : IO Unit := do
       | .error e => IO.println s!"Error: {e}"
       | .ok request =>
         IO.println s!"URI: {request.uri}"
-        let result := conf.handler request
-  
+        let result ← conf.handler request
+        IO.println s!"After request"
         let strSend := result.render
         let bytesSend ← socket'.send strSend.toUTF8
         socket'.close
