@@ -1,7 +1,17 @@
 import Fullstackalpha.Http.Server
 import Fullstackalpha.Http.Client
 
+import Lean.Data.Json.FromToJson
+import Lean.Data.Json.Parser
+
 open Fullstackalpha.Http
+
+structure Post where
+  userId : Nat
+  id : Nat
+  title : String
+  body : String
+deriving Lean.FromJson
 
 /--
   Entry
@@ -22,10 +32,23 @@ def handler : HttpRequest → IO HttpResponse := fun req => do
   IO.println "Before request in Main.handler"
   let response ← perform config request
   IO.println "After request in Main.handler"
-  pure {
+
+  match Lean.Json.parse (response.body.getD "{}") with
+  | .error e => pure {
     statusCode := Fullstackalpha.Http.StatusCode.fromNat 200
-    body := s!"Hello, world from {req.uri}. Result {response.render}"
+    body := s!"Parse failed {e}"
   }
+  | .ok json =>
+    match (Lean.fromJson? json : Except String Post) with
+    | .error e2 => pure {
+        statusCode := Fullstackalpha.Http.StatusCode.fromNat 200
+        body := s!"Parse failed {e2}"
+      }
+    | .ok post =>
+    pure {
+      statusCode := Fullstackalpha.Http.StatusCode.fromNat 200
+      body := s!"Hello, world from {req.uri}. Title: {post.title}"
+    }
 
 def conf : Fullstackalpha.Http.Config := 
   {
